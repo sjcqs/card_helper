@@ -1,5 +1,9 @@
 package com.example.vanda.cardgame;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -20,6 +24,7 @@ import org.opencv.imgproc.Imgproc;
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2
 {
 
+    public static final int MY_PERMISSIONS_REQUEST_CAMERA = 100;
     private static final String TAG = "MainActivity";
     JavaCameraView javaCameraView;
     Mat mRgba, imgGray, imgCanny;
@@ -28,7 +33,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         public void onManagerConnected(int status){
             switch(status){
                 case BaseLoaderCallback.SUCCESS:{
-                    javaCameraView.enableView();
+                    if (ContextCompat.checkSelfPermission(MainActivity.this,
+                            Manifest.permission.CAMERA)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                                new String[]{Manifest.permission.CAMERA},
+                                MY_PERMISSIONS_REQUEST_CAMERA);
+                    }
                     break;
                 }
                 default:{
@@ -97,4 +108,36 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         //Imgproc.cvtColor(mRgba, imgGray, Imgproc.COLOR_RGB2GRAY);
         return mRgba;
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                Log.i("Camera", "G : " + grantResults[0]);
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                    javaCameraView.enableView();
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+
+                    System.exit(1);
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+
+        }
+    }
+
 }
