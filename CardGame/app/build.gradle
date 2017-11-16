@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     externalNativeBuild {
         ndkBuild {
-            path '/Users/vanda/Documents/CardGame/app/build/intermediates/ndk/debug/Android.mk'
+            path 'build/intermediates/ndk/debug/Android.mk'
         }
     }
     defaultConfig {
