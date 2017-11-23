@@ -2,6 +2,7 @@ package org.opencv.android;
 
 import java.util.List;
 
+import android.app.ActionBar;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -10,6 +11,7 @@ import android.hardware.Camera.PreviewCallback;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.SurfaceHolder;
 import android.view.ViewGroup.LayoutParams;
 
 import org.opencv.BuildConfig;
@@ -138,9 +140,10 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
 
             /* Now set camera parameters */
             try {
-                Camera.Parameters params = mCamera.getParameters();
+                Camera.Parameters params= mCamera.getParameters();
                 Log.d(TAG, "getSupportedPreviewSizes()");
                 List<android.hardware.Camera.Size> sizes = params.getSupportedPreviewSizes();
+                params.getSupportedPreviewSizes();
 
                 if (sizes != null) {
                     /* Select the size that fits surface considering maximum size allowed */
@@ -178,9 +181,9 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
 
                     mFrameWidth = params.getPreviewSize().width;
                     mFrameHeight = params.getPreviewSize().height;
-
-                    if ((getLayoutParams().width == LayoutParams.MATCH_PARENT) && (getLayoutParams().height == LayoutParams.MATCH_PARENT))
-                        mScale = Math.min(((float)height)/mFrameHeight, ((float)width)/mFrameWidth);
+                    // ***** ALTERED next if and else:
+                    if ((getLayoutParams().width == ActionBar.LayoutParams.MATCH_PARENT) && (getLayoutParams().height == ActionBar.LayoutParams.MATCH_PARENT))
+                        mScale = Math.min(((float)height)/mFrameWidth, ((float)width)/mFrameHeight);
                     else
                         mScale = 0;
 
@@ -191,7 +194,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
                     int size = mFrameWidth * mFrameHeight;
                     size  = size * ImageFormat.getBitsPerPixel(params.getPreviewFormat()) / 8;
                     mBuffer = new byte[size];
-                    mCamera.setDisplayOrientation(90); //add this
+
                     mCamera.addCallbackBuffer(mBuffer);
                     mCamera.setPreviewCallbackWithBuffer(this);
 
@@ -205,13 +208,12 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
                     mCameraFrame[0] = new JavaCameraFrame(mFrameChain[0], mFrameWidth, mFrameHeight);
                     mCameraFrame[1] = new JavaCameraFrame(mFrameChain[1], mFrameWidth, mFrameHeight);
 
-                    /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         mSurfaceTexture = new SurfaceTexture(MAGIC_TEXTURE_ID);
                         mCamera.setPreviewTexture(mSurfaceTexture);
                     } else
-                       mCamera.setPreviewDisplay(null);*/
-                    mCamera.setPreviewDisplay(getHolder());
-
+                        mCamera.setPreviewDisplay(null);
+                    //mCamera.setPreviewDisplay(getHolder());
                     /* Finally we are ready to start the preview */
                     Log.d(TAG, "startPreview");
                     mCamera.startPreview();
@@ -261,7 +263,6 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
             return false;
 
         mCameraFrameReady = false;
-
         /* now we can start update thread */
         Log.d(TAG, "Starting processing thread");
         mStopThread = false;
@@ -378,3 +379,4 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
         }
     }
 }
+

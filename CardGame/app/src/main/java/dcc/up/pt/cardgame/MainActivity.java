@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame){
-        mRgba = inputFrame.rgba();
+        mRgba = inputFrame.gray();
         //Imgproc.cvtColor(mRgba, imgGray, Imgproc.COLOR_RGB2GRAY);
         return mRgba;
     }
@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     finishAndRemoveTask();
                 }
             }
+            return;
 
         }
     }
