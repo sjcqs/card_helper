@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CardGame</string>
+    <string name="max_cards">Max number of cards</string>
 </resources>
