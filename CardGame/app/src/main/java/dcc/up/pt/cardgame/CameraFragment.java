@@ -11,7 +11,6 @@ import android.support.v4.content.ContextCompat;
 import android.util.ArrayMap;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,11 +48,16 @@ public class CameraFragment extends Fragment implements
     private static final String TAG = "Camera Fragment";
     private static final int CAMERA_PERMISSION_REQUEST = 100;
     private static final String[] PERMISSIONS = new String[]{Manifest.permission.CAMERA};
-    private int mMaxCardsCount = 0;
 
+    public final static int MODE_PREVIEW = 0;
+    public final static int MODE_PREVIEW_BORDER = 1;
+    public final static int MODE_CARD = 2;
+
+    private int mPreviewMode = MODE_PREVIEW;
+    private int mMaxCardsCount = 0;
     private JavaCameraView mCameraView;
-    private Mat imgThresh, imgGray, imgBlur, imgHierarchy;
-    private Mat imgRGBA;
+    private Mat imgThresh, imgGray, imgBlur, imgHierarchy, imgRGBA, imgCards;
+
     private Map<OnCardsRecognisedListener, Integer> listeners = new ArrayMap<>();
 
     private BaseLoaderCallback mLoaderCallBack = new BaseLoaderCallback(getContext()){
@@ -83,7 +87,7 @@ public class CameraFragment extends Fragment implements
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-       return inflater.inflate(R.layout.fragment_camera, container, false);
+        return inflater.inflate(R.layout.fragment_camera, container, false);
     }
 
     @Override
@@ -118,6 +122,7 @@ public class CameraFragment extends Fragment implements
     public void onCameraViewStarted(int width, int height){
         imgThresh = new Mat(height, width, CvType.CV_8UC1);
         imgRGBA = new Mat(height, width, CvType.CV_8UC3);
+        imgCards = new Mat(height, width, CvType.CV_8UC3);
         imgGray = new Mat(height, width, CvType.CV_8UC1);
         imgBlur = new Mat(height, width, CvType.CV_8UC1);
         imgHierarchy = new Mat(height, width, CvType.CV_8UC1);
@@ -129,6 +134,7 @@ public class CameraFragment extends Fragment implements
         imgGray.release();
         imgBlur.release();
         imgRGBA.release();
+        imgCards.release();
         imgHierarchy.release();
     }
 
@@ -136,6 +142,7 @@ public class CameraFragment extends Fragment implements
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame){
         imgGray = inputFrame.gray();
         imgRGBA = inputFrame.rgba();
+        imgCards = imgRGBA.clone();
 
         // Reduction or noises
         Imgproc.GaussianBlur(imgGray, imgBlur, new Size(1,1), 1000);
@@ -161,7 +168,7 @@ public class CameraFragment extends Fragment implements
             MatOfPoint2f contour = new MatOfPoint2f();
             contours.get(i).convertTo(contour, CvType.CV_32FC2);
             Mat destMat = new Mat(imgRGBA.size(), imgRGBA.type());
-            Size size = computeCard(contour, imgThresh, destMat, imgRGBA);
+            Size size = computeCard(contour, imgThresh, destMat, imgCards);
 
             cards.add(destMat);
             double width = size.width;
@@ -184,10 +191,19 @@ public class CameraFragment extends Fragment implements
             }
         }
 
+        switch (mPreviewMode){
+            case MODE_PREVIEW:
+                break;
+            case MODE_PREVIEW_BORDER:
+                break;
+            case MODE_CARD:
+                break;
+        }
+
         return imgRGBA;
     }
 
-    private Size computeCard(MatOfPoint2f contour, Mat srcMat, Mat destMat, Mat debugMat){
+    private Size computeCard(MatOfPoint2f contour, Mat srcMat, Mat destMat, Mat drawMat){
         MatOfPoint2f approxCard = new MatOfPoint2f();
 
         double arcLength = Imgproc.arcLength(contour, true);
@@ -243,11 +259,11 @@ public class CameraFragment extends Fragment implements
 
             Imgproc.warpPerspective(srcMat, destMat, transform, destMat.size());
 
-            if (debugMat != null) {
+            if (drawMat != null) {
                 List<MatOfPoint> boxContours = new ArrayList<>();
                 boxContours.add(new MatOfPoint(vertices));
                 Imgproc.drawContours(
-                        debugMat,
+                        drawMat,
                         boxContours,
                         0, new Scalar(255),
                         2);
@@ -286,6 +302,14 @@ public class CameraFragment extends Fragment implements
     public void removeOnCardsRecognisedListener(OnCardsRecognisedListener listener){
         listeners.remove(listener);
         updateMaxCard();
+    }
+
+
+    public void setPreviewMode(int mode) {
+        if (mode > MODE_CARD){
+            mode = 0;
+        }
+        mPreviewMode = mode;
     }
 
     private void updateMaxCard(){

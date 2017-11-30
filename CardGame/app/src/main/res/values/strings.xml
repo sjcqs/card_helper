@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">CardGame</string>
     <string name="max_cards">Max number of cards</string>
+    <string name="placeholder">Lorem ipsum dolor sit amet</string>
+    <string name="card_clubs">♣</string>
+    <string name="card_hearts">♥</string>
+    <string name="card_spades">♠</string>
+    <string name="card_diamonds">♦</string>
 </resources>
