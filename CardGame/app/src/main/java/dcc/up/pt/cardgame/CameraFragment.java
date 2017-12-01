@@ -2,40 +2,33 @@ package dcc.up.pt.cardgame;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.util.ArrayMap;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.CvType;
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.RotatedRect;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+
+import dcc.up.pt.cardgame.listener.OnCardsRecognisedListener;
 
 /**
  * Created by satyan on 11/29/17.
@@ -51,14 +44,18 @@ public class CameraFragment extends Fragment implements
 
     public final static int MODE_PREVIEW = 0;
     public final static int MODE_PREVIEW_BORDER = 1;
-    public final static int MODE_CARD = 2;
+    private static final int PREVIEW_CAMERA = 0;
+    private static final int PREVIEW_IMAGE = 1;
 
     private int mPreviewMode = MODE_PREVIEW;
-    private int mMaxCardsCount = 0;
-    private JavaCameraView mCameraView;
-    private Mat imgThresh, imgGray, imgBlur, imgHierarchy, imgRGBA, imgCards;
+    private int mCardCount = 0;
 
-    private Map<OnCardsRecognisedListener, Integer> listeners = new ArrayMap<>();
+    private JavaCameraView mCameraView;
+    private ImageView mPreviewView;
+    private Mat imgGray;
+    private Mat imgRGBA;
+    private Mat imgCards;
+    private OnCardsRecognisedListener mOnCardRecognisedListener;
 
     private BaseLoaderCallback mLoaderCallBack = new BaseLoaderCallback(getContext()){
         @Override
@@ -84,6 +81,9 @@ public class CameraFragment extends Fragment implements
         }
     };
 
+    public CameraFragment() {
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -96,6 +96,8 @@ public class CameraFragment extends Fragment implements
         mCameraView.setVisibility(SurfaceView.VISIBLE);
         mCameraView.setCvCameraViewListener(this);
 
+        mPreviewView = view.findViewById(R.id.image_preview);
+
         if(!OpenCVLoader.initDebug()){
             Log.d(TAG, "OpenCV not loaded!\n");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_3_0, getContext(), mLoaderCallBack);
@@ -104,6 +106,16 @@ public class CameraFragment extends Fragment implements
             Log.d(TAG, "OpenCV loaded!\n");
             mLoaderCallBack.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            mPreviewMode = savedInstanceState.getInt("var_preview_mode", MODE_PREVIEW);
+            mCardCount = savedInstanceState.getInt("var_card_count", 0);
+        }
+
     }
 
     @Override
@@ -119,157 +131,57 @@ public class CameraFragment extends Fragment implements
     }
 
     @Override
-    public void onCameraViewStarted(int width, int height){
-        imgThresh = new Mat(height, width, CvType.CV_8UC1);
-        imgRGBA = new Mat(height, width, CvType.CV_8UC3);
-        imgCards = new Mat(height, width, CvType.CV_8UC3);
-        imgGray = new Mat(height, width, CvType.CV_8UC1);
-        imgBlur = new Mat(height, width, CvType.CV_8UC1);
-        imgHierarchy = new Mat(height, width, CvType.CV_8UC1);
-    }
+    public void onCameraViewStarted(int width, int height){}
 
     @Override
     public void onCameraViewStopped(){
-        imgThresh.release();
         imgGray.release();
-        imgBlur.release();
         imgRGBA.release();
         imgCards.release();
-        imgHierarchy.release();
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame){
-        imgGray = inputFrame.gray();
         imgRGBA = inputFrame.rgba();
+        imgGray = inputFrame.gray();
         imgCards = imgRGBA.clone();
 
-        // Reduction or noises
-        Imgproc.GaussianBlur(imgGray, imgBlur, new Size(1,1), 1000);
-
-        // Augmentation of the contrast (card are colorful against a white background)
-        Imgproc.threshold(imgBlur, imgThresh,120, 255, Imgproc.THRESH_BINARY);
-
-        // Identifying the contours
-        List<MatOfPoint> contours = new LinkedList<>();
-        Imgproc.findContours(imgThresh, contours,imgHierarchy,Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-        // Sort them by size (card are typically the biggest)
-        Collections.sort(contours, new Comparator<MatOfPoint>() {
-            @Override
-            public int compare(MatOfPoint o1, MatOfPoint o2) {
-                return -Double.compare(Imgproc.contourArea(o1),Imgproc.contourArea(o2));
+        // if we are not supposed to recognise cards, no need to use resources
+        if (mCardCount > 0) {
+            List<Mat> cards = new ArrayList<>(mCardCount);
+            long[] cardsAddrs = new long[mCardCount];
+            for (int i = 0; i < mCardCount; i++) {
+                Mat mat = new Mat(new Size(480,480), imgRGBA.type());
+                cards.add(mat);
+                cardsAddrs[i] = mat.getNativeObjAddr();
             }
-        });
+            int found = findCards(
+                    imgGray.getNativeObjAddr(),
+                    imgRGBA.getNativeObjAddr(),
+                    imgCards.getNativeObjAddr(),
+                    cardsAddrs);
+            if (found != 0)
+            Log.d(TAG, "onCameraFrame: " + found);
 
-        // Center each card
-        List<Mat> cards = new ArrayList<>(mMaxCardsCount);
-
-        for (int i = 0; i < mMaxCardsCount && i < contours.size(); i++) {
-            MatOfPoint2f contour = new MatOfPoint2f();
-            contours.get(i).convertTo(contour, CvType.CV_32FC2);
-            Mat destMat = new Mat(imgRGBA.size(), imgRGBA.type());
-            Size size = computeCard(contour, imgThresh, destMat, imgCards);
-
-            cards.add(destMat);
-            double width = size.width;
-            double height = size.height;
-
-            Log.d(TAG, String.format("Objects#%2d: %3.2fx%3.2f",i,width,height));
-        }
-
-        for (Map.Entry<OnCardsRecognisedListener, Integer> entry : listeners.entrySet()) {
-            int expected = entry.getValue();
-            int found = cards.size();
-            OnCardsRecognisedListener listener = entry.getKey();
-            if (found == 0){
-                listener.noCards();
-            } else if (found < expected){
-                listener.partiallyRecognised(cards, expected - found);
-            } else {
-                // return the top mCards
-                listener.recognised(cards.subList(0,expected));
+            if (mOnCardRecognisedListener != null) {
+                if (found == 0){
+                    mOnCardRecognisedListener.noCards();
+                }else if (found == mCardCount) {
+                    mOnCardRecognisedListener.recognised(cards);
+                } else if (found < mCardCount) {
+                    mOnCardRecognisedListener.partiallyRecognised(cards, mCardCount - found);
+                }
             }
-        }
 
-        switch (mPreviewMode){
-            case MODE_PREVIEW:
-                break;
-            case MODE_PREVIEW_BORDER:
-                break;
-            case MODE_CARD:
-                break;
+            switch (mPreviewMode){
+                case MODE_PREVIEW:
+                    return imgRGBA;
+                case MODE_PREVIEW_BORDER:
+                    return imgCards;
+            }
         }
 
         return imgRGBA;
-    }
-
-    private Size computeCard(MatOfPoint2f contour, Mat srcMat, Mat destMat, Mat drawMat){
-        MatOfPoint2f approxCard = new MatOfPoint2f();
-
-        double arcLength = Imgproc.arcLength(contour, true);
-        Imgproc.approxPolyDP(contour, approxCard, arcLength*0.2,true);
-        RotatedRect rec = Imgproc.minAreaRect(contour);
-        Point[] vertices = new Point[4];
-        Point[] pts = new Point[4];
-        rec.points(pts);
-
-        Point c = rec.center;
-        boolean[] set = {false, false, false, false};
-        // We place our point so that our rectangle is p0, p1, p2, p3
-        for (Point p : pts) {
-            if (p != null &&
-                    p.x > 0 && p.x < srcMat.width()
-                    && p.y > 0 && p.y < srcMat.height()) {
-                if (p.x < c.x) {
-                    if (p.y < c.y) {
-                        vertices[0] = p;
-                        set[0] = true;
-                    } else {
-                        vertices[3] = p;
-                        set[3] = true;
-                    }
-                } else {
-                    if (p.y < c.y) {
-                        vertices[1] = p;
-                        set[1] = true;
-                    } else {
-                        vertices[2] = p;
-                        set[2] = true;
-                    }
-                }
-            }
-        }
-
-        if (set[0] && set[1] && set[2] && set[3]) {
-
-            Mat src = new MatOfPoint2f(
-                    vertices[0],
-                    vertices[1],
-                    vertices[2],
-                    vertices[3]
-            );
-
-            Mat dest =
-                    new MatOfPoint2f(
-                            new Point(0, 0),
-                            new Point(destMat.width() - 1, 0),
-                            new Point(destMat.width() - 1, destMat.height() - 1),
-                            new Point(0, destMat.height() - 1));
-            Mat transform = Imgproc.getPerspectiveTransform(src, dest);
-
-            Imgproc.warpPerspective(srcMat, destMat, transform, destMat.size());
-
-            if (drawMat != null) {
-                List<MatOfPoint> boxContours = new ArrayList<>();
-                boxContours.add(new MatOfPoint(vertices));
-                Imgproc.drawContours(
-                        drawMat,
-                        boxContours,
-                        0, new Scalar(255),
-                        2);
-            }
-        }
-        return rec.size;
     }
 
     @Override
@@ -294,32 +206,64 @@ public class CameraFragment extends Fragment implements
         return new CameraFragment();
     }
 
-    public void addOnCardsRecognisedListener(OnCardsRecognisedListener listener, int numberExpected){
-        listeners.put(listener, numberExpected);
-        updateMaxCard();
+    public void setOnCardsRecognisedListener(OnCardsRecognisedListener listener, int numberExpected){
+        mOnCardRecognisedListener = listener;
+        mCardCount = numberExpected;
+        switchPreview(PREVIEW_CAMERA);
     }
 
-    public void removeOnCardsRecognisedListener(OnCardsRecognisedListener listener){
-        listeners.remove(listener);
-        updateMaxCard();
+    private void switchPreview(int preview) {
+        switch (preview){
+            case PREVIEW_CAMERA:
+                mCameraView.enableView();
+                mCameraView.setVisibility(View.VISIBLE);
+                mPreviewView.setVisibility(View.GONE);
+                break;
+            case PREVIEW_IMAGE:
+                mCameraView.disableView();
+                mCameraView.setVisibility(View.GONE);
+                mPreviewView.setVisibility(View.VISIBLE);
+                break;
+            default: switchPreview(PREVIEW_CAMERA);
+                break;
+        }
+    }
+
+    public void clearOnCardsRecognisedListener(){
+        mOnCardRecognisedListener = null;
+        mCardCount = 0;
+
+    }
+
+    public void clearOnCardsRecognisedListener(Mat preview){
+        clearOnCardsRecognisedListener();
+        switchPreview(PREVIEW_IMAGE);
+        preview(preview, mPreviewView);
+    }
+
+    public static void preview(Mat m, ImageView imgView) {
+
+        Log.d(TAG, "preview: " + m.width() + " " + m.height() + " " + m.size());
+
+        Bitmap resultBitmap = Bitmap.createBitmap(m.cols(),  m.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(m, resultBitmap);
+        imgView.setImageBitmap(resultBitmap);
     }
 
 
     public void setPreviewMode(int mode) {
-        if (mode > MODE_CARD){
+        if (mode > MODE_PREVIEW_BORDER){
             mode = 0;
         }
         mPreviewMode = mode;
     }
 
-    private void updateMaxCard(){
-        int max = 0;
-        // recognise the maximum among listeners
-        for (Integer count : listeners.values()) {
-            if (count > max){
-                max = count;
-            }
-        }
-        mMaxCardsCount = max;
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("var_card_count", mCardCount);
+        outState.putInt("var_preview_mode",mPreviewMode);
     }
+
+    public native int findCards(long addrGray, long addrRgba, long addrCards, long[] cardAddrs);
 }

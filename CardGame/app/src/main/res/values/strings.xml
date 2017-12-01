@@ -6,4 +6,33 @@
     <string name="card_hearts">♥</string>
     <string name="card_spades">♠</string>
     <string name="card_diamonds">♦</string>
+    <string name="start">Start</string>
+    <string name="start_instructions">
+        Welcome !\n
+        Press start to begin !\n
+        You will need to register\n
+        your deck before playing.
+    </string>
+    <string name="register_instructions">
+        Place the card in front of the camera.\n
+        Press <b>OK</b> when the card is fully visible.\n
+        When you are done\n
+        press <b>Finish</b>.
+    </string>
+    <string name="register">Register</string>
+    <string name="ok">OK</string>
+    <string name="card_value">%1$2s%2$s</string>
+    <string name="reset">Reset</string>
+    <string name="finish">Finish</string>
+    <string name="play">Play</string>
+    <string name="play_instruction">
+        Turn the volume up.\n
+        Place the phone on a static position\n
+        After each turn the winner\n
+        will be announced and displayed.
+    </string>
+    <string name="not_registered">%1$s wasn\'t registered.</string>
+    <string name="dialog_card_registered">Card registered.</string>
+    <string name="image_preview">Image preview</string>
+    <string name="cancel">Cancel</string>
 </resources>

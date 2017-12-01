@@ -1,4 +1,4 @@
-package dcc.up.pt.cardgame;
+package dcc.up.pt.cardgame.listener;
 
 import org.opencv.core.Mat;
 

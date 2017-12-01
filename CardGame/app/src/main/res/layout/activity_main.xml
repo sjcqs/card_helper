@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     tools:context="dcc.up.pt.cardgame.MainActivity">
     <FrameLayout
-            android:id="@+id/frame_container"
+            android:id="@+id/layout_container"
             android:layout_alignParentTop="true"
         android:layout_above="@id/layout_action"
             android:layout_width="match_parent"
@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_alignTop="@+id/frame_container"
+        android:layout_alignTop="@+id/layout_container"
         android:layout_marginTop="48dp"
         android:gravity="center"
         android:textColor="@color/colorAccent"
@@ -26,25 +26,15 @@
         android:textAllCaps="true"
         android:textAlignment="center"
         android:textStyle="bold"
-        android:textSize="22sp"
+        android:textSize="16sp"
         android:fontFamily="sans-serif"
         android:text="@string/placeholder"/>
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/layout_action"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="96dp"
         android:elevation="4dp"
-        android:padding="8dp"
         android:background="@color/colorPrimaryDark"
-        android:layout_alignParentBottom="true">
-        <TextView
-            android:id="@+id/text_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="22sp"
-            android:textAlignment="center"
-            android:textColor="@color/colorWhite"
-            android:text="@string/placeholder"/>
-    </LinearLayout>
+        android:layout_alignParentBottom="true"/>
 </RelativeLayout>
