@@ -26,6 +26,8 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import dcc.up.pt.cardgame.listener.OnCardsRecognisedListener;
@@ -96,6 +98,7 @@ public class CameraFragment extends Fragment implements
         mCameraView.setVisibility(SurfaceView.VISIBLE);
         mCameraView.setCvCameraViewListener(this);
 
+
         mPreviewView = view.findViewById(R.id.image_preview);
 
         if(!OpenCVLoader.initDebug()){
@@ -150,6 +153,7 @@ public class CameraFragment extends Fragment implements
         if (mCardCount > 0) {
             List<Mat> cards = new ArrayList<>(mCardCount);
             long[] cardsAddrs = new long[mCardCount];
+            float[] cardsX = new  float[mCardCount];
             for (int i = 0; i < mCardCount; i++) {
                 Mat mat = new Mat(new Size(480,480), imgRGBA.type());
                 cards.add(mat);
@@ -159,7 +163,20 @@ public class CameraFragment extends Fragment implements
                     imgGray.getNativeObjAddr(),
                     imgRGBA.getNativeObjAddr(),
                     imgCards.getNativeObjAddr(),
-                    cardsAddrs);
+                    cardsAddrs, cardsX);
+
+            // Dirty dirty...
+            List<MatPos> matPos = new ArrayList<>(mCardCount);
+            for (int i = 0; i < mCardCount; i++) {
+                MatPos pos = new MatPos(cards.get(i), cardsX[i]);
+                matPos.add(pos);
+            }
+            cards.clear();
+            Collections.sort(matPos, MatPos.COMPARATOR);
+            for (MatPos m : matPos) {
+                cards.add(m.mat);
+            }
+
             if (found != 0)
             Log.d(TAG, "onCameraFrame: " + found);
 
@@ -265,5 +282,23 @@ public class CameraFragment extends Fragment implements
         outState.putInt("var_preview_mode",mPreviewMode);
     }
 
-    public native int findCards(long addrGray, long addrRgba, long addrCards, long[] cardAddrs);
+    public native int findCards(long addrGray, long addrRgba, long addrCards, 
+                                long[] cardAddrs, float[] cardsX);
+
+    private static class MatPos {
+        Mat mat;
+        float x;
+
+        static final Comparator<MatPos> COMPARATOR = new Comparator<MatPos>() {
+            @Override
+            public int compare(MatPos o1, MatPos o2) {
+                return Float.compare(o1.x, o2.x);
+            }
+        };
+
+        public MatPos(Mat mat, float x) {
+            this.mat = mat;
+            this.x = x;
+        }
+    }
 }

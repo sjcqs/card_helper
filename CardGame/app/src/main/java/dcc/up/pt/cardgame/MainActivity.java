@@ -146,7 +146,6 @@ public class MainActivity extends AppCompatActivity implements CardDialog.CardDi
         OnCardsRecognisedListener listener = new OnCardsRecognisedListener() {
             @Override
             public void recognised(final List<Mat> cards) {
-                mCameraFragment.clearOnCardsRecognisedListener();
                 Thread bgThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -163,13 +162,7 @@ public class MainActivity extends AppCompatActivity implements CardDialog.CardDi
                         }
                     }
                 });
-                bgThread.run();
-                try {
-                    bgThread.join();
-                } catch (InterruptedException ignored) {
-                }
-                mCameraFragment.setOnCardsRecognisedListener(this, 2);
-
+                bgThread.start();
             }
 
             @Override
