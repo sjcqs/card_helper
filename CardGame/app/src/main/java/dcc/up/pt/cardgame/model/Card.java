@@ -89,9 +89,6 @@ public class Card implements Comparable<Card> {
      * @return true if cards matches
      */
     public double matches(Mat mat){
-        /*diff = cv2.absdiff(preprocess(img1),preprocess(img2))
-        diff = cv2.GaussianBlur(diff,(5,5),5)
-        flag, diff = cv2.threshold(diff, 200, 255, cv2.THRESH_BINARY)*/
         Mat diffMat = mMatrix.clone();
         Mat threshMat = mMatrix.clone();
         Mat m0, m1;
@@ -124,7 +121,7 @@ public class Card implements Comparable<Card> {
         Imgproc.GaussianBlur(gray, blur,new Size(5, 5), 2);
         Imgproc.adaptiveThreshold(
                 blur, thresh, 255,
-                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,
                 11, 1
         );
         Imgproc.GaussianBlur(thresh, dest,new Size(5, 5), 2);
