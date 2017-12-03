@@ -1,12 +1,16 @@
 package dcc.up.pt.cardgame;
 
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 
 /**
@@ -14,7 +18,11 @@ import android.widget.TextView;
  */
 
 public class PlayFragment extends Fragment {
-    public TextView[] result = new TextView[2];
+    private TextView[] mResults = new TextView[2];
+    private Switch mModeSwitch;
+    private Button mNextButton;
+    private PlayModeListener mModeListener;
+
     public static PlayFragment newInstance() {
         return new PlayFragment();
     }
@@ -26,10 +34,26 @@ public class PlayFragment extends Fragment {
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            // Instantiate the NoticeDialogListener so we can send events to the host
+            mModeListener = (PlayModeListener) context;
+        } catch (ClassCastException e) {
+            // The activity doesn't implement the interface, throw exception
+            throw new ClassCastException(context.toString()
+                    + " must implement PlayModeListener");
+        }
+    }
+
+    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        result[0] = view.findViewById(R.id.result);
-        result[1] = view.findViewById(R.id.result2);
+        mResults[0] = view.findViewById(R.id.result);
+        mResults[1] = view.findViewById(R.id.result2);
+        mNextButton = view.findViewById(R.id.next_button);
+        mModeSwitch = view.findViewById(R.id.mode_switch);
+
         final TextView instruction = getActivity().findViewById(R.id.text_instruction);
         getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -37,6 +61,37 @@ public class PlayFragment extends Fragment {
                 instruction.setText(R.string.play_instruction);
             }
         });
+        updateMode();
+
+        mModeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                updateMode();
+                if (mModeListener != null){
+                    mModeListener.onSwitchMode(isChecked);
+                }
+            }
+        });
+
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mModeListener != null){
+                    mModeListener.onNextTurn();
+                }
+            }
+        });
+
+    }
+
+    private void updateMode(){
+        if (mModeSwitch.isChecked()){
+            mModeSwitch.setText(R.string.auto);
+            mNextButton.setVisibility(View.INVISIBLE);
+        } else {
+            mModeSwitch.setText(R.string.manual);
+            mNextButton.setVisibility(View.VISIBLE);
+        }
     }
 
 
@@ -44,8 +99,31 @@ public class PlayFragment extends Fragment {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                result[index].setText(text);
+                mResults[index].setText(text);
             }
         });
+    }
+
+    public void disableButton() {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mNextButton.setEnabled(false);
+            }
+        });
+    }
+
+    public void enableButton() {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mNextButton.setEnabled(true);
+            }
+        });
+    }
+
+    public interface PlayModeListener{
+        void onSwitchMode(boolean isAuto);
+        void onNextTurn();
     }
 }

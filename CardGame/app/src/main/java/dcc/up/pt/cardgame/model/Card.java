@@ -11,8 +11,6 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.util.Arrays;
-
 import dcc.up.pt.cardgame.R;
 
 /**
@@ -21,22 +19,7 @@ import dcc.up.pt.cardgame.R;
  */
 
 public class Card implements Comparable<Card> {
-    /*public final static String[] CARD_VALUES = new String[]{
-            "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "V", "D", "R"
-    };*/
-    public final static String[] CARD_VALUES = new String[]{
-            "A", "2", "3", "4", "5"
-    };
 
-    /*public final static int[] CARD_SUITS = new int[] {
-            R.string.card_diamonds,
-            R.string.card_hearts,
-            R.string.card_clubs,
-            R.string.card_spades
-    };*/
-    public final static int[] CARD_SUITS = new int[] {
-            R.string.card_diamonds
-    };
     private static final String TAG = "Card";
 
     private final int mSuit;
@@ -69,13 +52,13 @@ public class Card implements Comparable<Card> {
     public String toString(Context context){
         return context.getString(
                 R.string.card_value,
-                CARD_VALUES[mValue], context.getString(CARD_SUITS[mSuit]));
+                Deck.CARD_VALUES[mValue], context.getString(Deck.CARD_SUITS[mSuit]));
     }
 
     public static String card2String(Context context, int value, int suit){
         return context.getString(
                 R.string.card_value,
-                CARD_VALUES[value], context.getString(CARD_SUITS[suit]));
+                Deck.CARD_VALUES[value], context.getString(Deck.CARD_SUITS[suit]));
     }
 
     @Override
@@ -101,7 +84,7 @@ public class Card implements Comparable<Card> {
         Log.d(TAG, "sizes: " + m0.size() + " " + m0.size());
         Log.d(TAG, "format: " + m1.type() + " " + m1.type());
 
-        Core.subtract(m0, m1, diffMat);
+        Core.absdiff(m1, m0, diffMat);
         Imgproc.threshold(diffMat, threshMat, 200, 255, Imgproc.THRESH_BINARY);
         Scalar res =  Core.sumElems(threshMat);
 

@@ -213,7 +213,7 @@ public:
      * the result object.
      *
      * Params:
-     *     result = the result object in which the indices of the nearest-neighbors are stored
+     *     result = the mResults object in which the indices of the nearest-neighbors are stored
      *     vec = the vector for which to search the nearest neighbors
      *     maxCheck = the maximum number of restarts (in a best-bin-first manner)
      */

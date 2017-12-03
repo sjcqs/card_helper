@@ -10,7 +10,7 @@ import java.util.List;
  */
 
 public interface OnCardsRecognisedListener {
-    void recognised(List<Mat> cards);
+    void recognised(List<Mat> cards, Mat preview);
     void partiallyRecognised(List<Mat> cards, int missing);
     void noCards();
 }

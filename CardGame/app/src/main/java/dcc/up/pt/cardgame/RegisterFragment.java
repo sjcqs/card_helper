@@ -8,12 +8,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import dcc.up.pt.cardgame.model.Card;
 
-import static dcc.up.pt.cardgame.model.Card.CARD_SUITS;
-import static dcc.up.pt.cardgame.model.Card.CARD_VALUES;
+import static dcc.up.pt.cardgame.model.Deck.CARD_SUITS;
+import static dcc.up.pt.cardgame.model.Deck.CARD_VALUES;
 
 /**
  * Created by satyan on 11/30/17.
@@ -28,6 +27,8 @@ public class RegisterFragment extends Fragment{
     private Button mOkButton;
     private Button mResetButton;
     private TextView mCurrentCardText;
+    private int mValueCount;
+    private int mSuitCount;
 
     public static RegisterFragment newInstance() {
         return new RegisterFragment();
@@ -47,10 +48,16 @@ public class RegisterFragment extends Fragment{
         mOkButton = view.findViewById(R.id.button_ok);
         mResetButton = view.findViewById(R.id.button_reset);
 
+        Bundle args = getArguments();
+        assert args != null;
+        this.mValueCount = args.getInt("value_count",-1);
+        this.mSuitCount = args.getInt("suit_count",-1);
+
+
     }
 
     private void updateCurrentCard(){
-        if (suitIndex < CARD_SUITS.length && valueIndex < CARD_VALUES.length){
+        if (suitIndex < mSuitCount && valueIndex < mValueCount){
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -109,7 +116,7 @@ public class RegisterFragment extends Fragment{
 
     public void next(){
         valueIndex = valueIndex + 1;
-        if (valueIndex >= CARD_VALUES.length) {
+        if (valueIndex >= mValueCount) {
             suitIndex = suitIndex + 1;
             valueIndex = 0;
         }

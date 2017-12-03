@@ -33,7 +33,7 @@
         android:id="@+id/layout_action"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="96dp"
+        android:layout_height="124dp"
         android:elevation="4dp"
         android:background="@color/colorPrimaryDark"
         android:layout_alignParentBottom="true"/>

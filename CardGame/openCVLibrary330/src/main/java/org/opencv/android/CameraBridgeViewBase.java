@@ -56,8 +56,9 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     public static final int CAMERA_ID_FRONT = 98;
     public static final int RGBA = 1;
     public static final int GRAY = 2;
-    Matrix matrix = new Matrix();
-    Bitmap bitmap;
+
+    private Matrix mMatrix = new Matrix();
+    private Bitmap mBitmap;
 
     public CameraBridgeViewBase(Context context, int cameraId) {
         super(context);
@@ -402,8 +403,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
             try {
                 Utils.matToBitmap(modified, mCacheBitmap);
                 // ***** ALTERED next 2 lines:
-                matrix.setRotate(90f);
-                bitmap = Bitmap.createBitmap(mCacheBitmap, 0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight(), matrix, true);
+                mMatrix.setRotate(90f);
+                mBitmap = Bitmap.createBitmap(mCacheBitmap, 0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight(), mMatrix, true);
             } catch(Exception e) {
                 Log.e(TAG, "Mat type: " + modified);
                 Log.e(TAG, "Bitmap type: " + mCacheBitmap.getWidth() + "*" + mCacheBitmap.getHeight());
@@ -420,17 +421,17 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
                     Log.d(TAG, "mStretch value: " + mScale);
                 // ***** ALTERED next if and else:
                 if (mScale != 0) {
-                    canvas.drawBitmap(bitmap, new Rect(0,0,bitmap.getWidth(), bitmap.getHeight()),
-                            new Rect((int)((canvas.getWidth() - mScale*bitmap.getWidth()) / 2),
-                                    (int)((canvas.getHeight() - mScale*bitmap.getHeight()) / 2),
-                                    (int)((canvas.getWidth() - mScale*bitmap.getWidth()) / 2 + mScale*bitmap.getWidth()),
-                                    (int)((canvas.getHeight() - mScale*bitmap.getHeight()) / 2 + mScale*bitmap.getHeight())), null);
+                    canvas.drawBitmap(mBitmap, new Rect(0,0, mBitmap.getWidth(), mBitmap.getHeight()),
+                            new Rect((int)((canvas.getWidth() - mScale* mBitmap.getWidth()) / 2),
+                                    (int)((canvas.getHeight() - mScale* mBitmap.getHeight()) / 2),
+                                    (int)((canvas.getWidth() - mScale* mBitmap.getWidth()) / 2 + mScale* mBitmap.getWidth()),
+                                    (int)((canvas.getHeight() - mScale* mBitmap.getHeight()) / 2 + mScale* mBitmap.getHeight())), null);
                 } else
-                    canvas.drawBitmap(bitmap, new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight()),
-                            new Rect((canvas.getWidth() - bitmap.getWidth()) / 2,
-                                    (canvas.getHeight() - bitmap.getHeight()) / 2,
-                                    (canvas.getWidth() - bitmap.getWidth()) / 2 + bitmap.getWidth(),
-                                    (canvas.getHeight() - bitmap.getHeight()) / 2 + bitmap.getHeight()), null);
+                    canvas.drawBitmap(mBitmap, new Rect(0, 0, mBitmap.getWidth(), mBitmap.getHeight()),
+                            new Rect((canvas.getWidth() - mBitmap.getWidth()) / 2,
+                                    (canvas.getHeight() - mBitmap.getHeight()) / 2,
+                                    (canvas.getWidth() - mBitmap.getWidth()) / 2 + mBitmap.getWidth(),
+                                    (canvas.getHeight() - mBitmap.getHeight()) / 2 + mBitmap.getHeight()), null);
 
                 if (mFpsMeter != null) {
                     mFpsMeter.measure();
@@ -461,7 +462,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     {
         mCacheBitmap = Bitmap.createBitmap(mFrameWidth, mFrameHeight, Bitmap.Config.ARGB_8888);
         // ***** ALTERED next line:
-        bitmap = Bitmap.createBitmap(mCacheBitmap, 0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight(), matrix, true);
+        mBitmap = Bitmap.createBitmap(mCacheBitmap, 0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight(), mMatrix, true);
     }
 
     public interface ListItemAccessor {

@@ -152,29 +152,49 @@ public class CameraFragment extends Fragment implements
         // if we are not supposed to recognise cards, no need to use resources
         if (mCardCount > 0) {
             List<Mat> cards = new ArrayList<>(mCardCount);
+            List<Mat> previews = new ArrayList<>(mCardCount);
             long[] cardsAddrs = new long[mCardCount];
+            long[] previewsAddrs = new long[mCardCount];
             float[] cardsX = new  float[mCardCount];
             for (int i = 0; i < mCardCount; i++) {
                 Mat mat = new Mat(new Size(480,480), imgRGBA.type());
+                Mat preview = new Mat(new Size(480,480), imgGray.type());
                 cards.add(mat);
+                previews.add(preview);
+                previewsAddrs[i] = preview.getNativeObjAddr();
                 cardsAddrs[i] = mat.getNativeObjAddr();
             }
+
             int found = findCards(
                     imgGray.getNativeObjAddr(),
                     imgRGBA.getNativeObjAddr(),
                     imgCards.getNativeObjAddr(),
-                    cardsAddrs, cardsX);
+                    cardsAddrs, previewsAddrs, cardsX);
 
             // Dirty dirty...
             List<MatPos> matPos = new ArrayList<>(mCardCount);
-            for (int i = 0; i < mCardCount; i++) {
+            for (int i = 0; i < found; i++) {
+                Log.d(TAG, "onCameraFrame: ");
                 MatPos pos = new MatPos(cards.get(i), cardsX[i]);
                 matPos.add(pos);
             }
             cards.clear();
+
             Collections.sort(matPos, MatPos.COMPARATOR);
             for (MatPos m : matPos) {
                 cards.add(m.mat);
+            }
+
+            matPos.clear();
+            for (int i = 0; i < found; i++) {
+                MatPos pos = new MatPos(previews.get(i), cardsX[i]);
+                matPos.add(pos);
+            }
+            previews.clear();
+
+            Collections.sort(matPos, MatPos.COMPARATOR);
+            for (MatPos m : matPos) {
+                previews.add(m.mat);
             }
 
             if (found != 0)
@@ -184,7 +204,7 @@ public class CameraFragment extends Fragment implements
                 if (found == 0){
                     mOnCardRecognisedListener.noCards();
                 }else if (found == mCardCount) {
-                    mOnCardRecognisedListener.recognised(cards);
+                    mOnCardRecognisedListener.recognised(cards, previews.get(0));
                 } else if (found < mCardCount) {
                     mOnCardRecognisedListener.partiallyRecognised(cards, mCardCount - found);
                 }
@@ -283,7 +303,7 @@ public class CameraFragment extends Fragment implements
     }
 
     public native int findCards(long addrGray, long addrRgba, long addrCards, 
-                                long[] cardAddrs, float[] cardsX);
+                                long[] cardAddrs, long[] previewAddrs, float[] cardsX);
 
     private static class MatPos {
         Mat mat;

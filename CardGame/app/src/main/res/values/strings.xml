@@ -11,7 +11,9 @@
         Welcome !\n
         Press start to begin !\n
         You will need to register\n
-        your deck before playing.
+        your deck before playing.\n
+        Using the seek bars below\n
+        you can use a subset of your deck.
     </string>
     <string name="register_instructions">
         Place the card in front of the camera.\n
@@ -35,4 +37,9 @@
     <string name="dialog_card_registered">Card registered.</string>
     <string name="image_preview">Image preview</string>
     <string name="cancel">Cancel</string>
+    <string name="auto">Auto</string>
+    <string name="manual">Manual</string>
+    <string name="next_turn">Next turn</string>
+    <string name="wait">Wait…</string>
+    <string name="done">Done !</string>
 </resources>
