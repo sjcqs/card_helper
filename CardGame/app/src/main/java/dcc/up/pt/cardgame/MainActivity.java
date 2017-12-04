@@ -1,11 +1,11 @@
 package dcc.up.pt.cardgame;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.StringRes;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
@@ -253,17 +253,17 @@ public class MainActivity extends AppCompatActivity implements CardDialog.CardDi
         switch (state){
             case STATE_START:
                 Log.d(TAG, "Start state");
-                switchFragment(mStartFragment);
+                switchFragment(mStartFragment, false);
                 displayStart();
                 break;
             case STATE_REGISTER:
                 Log.d(TAG, "Register state");
-                switchFragment(mRegisterFragment);
+                switchFragment(mRegisterFragment, true);
                 displayRegister();
                 break;
             case STATE_PLAY:
                 Log.d(TAG, "Play state");
-                switchFragment(mPlayFragment);
+                switchFragment(mPlayFragment, true);
                 displayPlay();
                 break;
         }
@@ -339,12 +339,14 @@ public class MainActivity extends AppCompatActivity implements CardDialog.CardDi
         }
     }
 
-    private void switchFragment(Fragment fragment) {
+    private void switchFragment(Fragment fragment, boolean addToBackStack) {
         mCurrentFragment = fragment;
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.layout_action, fragment)
-                .addToBackStack(null)
-                .commit();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.layout_action, fragment);
+        if (addToBackStack) {
+            ft.addToBackStack(null);
+        }
+        ft.commit();
     }
 
     @Override

@@ -17,9 +17,9 @@ import dcc.up.pt.cardgame.R;
 public class Deck {
     private static final String TAG = "Deck";
     public final static int[] CARD_SUITS = new int[] {
-            R.string.card_diamonds,
-            R.string.card_spades,
             R.string.card_hearts,
+            R.string.card_spades,
+            R.string.card_diamonds,
             R.string.card_clubs
     };
     public final static String[] CARD_VALUES = new String[]{
