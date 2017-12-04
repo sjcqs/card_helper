@@ -286,7 +286,6 @@ public class MainActivity extends AppCompatActivity implements CardDialog.CardDi
 
     private void displayRegister() {
         mDeck.clear();
-        mRegisterFragment.reset();
         mCameraFragment.setPreviewMode(CameraFragment.MODE_PREVIEW_BORDER);
         mRegisterFragment.setOnRegistrationListener(new RegisterFragment.OnRegistrationListener() {
             @Override
@@ -367,6 +366,7 @@ public class MainActivity extends AppCompatActivity implements CardDialog.CardDi
             displayStart();
             mCurrentFragment = mStartFragment;
         }else if (mCurrentFragment.equals(mPlayFragment)){
+            mRegisterFragment.reset();
             displayRegister();
             mCurrentFragment = mRegisterFragment;
         } else if(mCurrentFragment.equals(mRegisterFragment)){
